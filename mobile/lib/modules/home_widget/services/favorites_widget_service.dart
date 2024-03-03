@@ -1,9 +1,13 @@
 
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/painting.dart';
+import 'package:flutter/widgets.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/constants/app_widget_data.dart';
 import 'package:immich_mobile/modules/favorite/providers/favorite_provider.dart';
 import 'package:immich_mobile/shared/models/asset.dart';
 import 'package:immich_mobile/shared/providers/db.provider.dart';
@@ -36,23 +40,39 @@ final favoritesWidgetServiceProvider = StateProvider<FavoritesWidgetService>((re
 
 class FavoritesWidgetService{
   List<Asset> favoriteAssets;
+  final _globalKey = GlobalKey();
 
   FavoritesWidgetService(this.favoriteAssets);
 
-  void updateWidget() {
+  void updateWidget() async {
     Asset selectedAsset = favoriteAssets[0];
     print('Selected asset: ${selectedAsset.name}');
-    ImmichThumbnail.imageProvider(asset: selectedAsset)
-        .resolve(ImageConfiguration())
-        .addListener(ImageStreamListener((info, call) {
-      print('Image loaded');
-      Image image = info.image;
-      image.toByteData(format: ImageByteFormat.png).then((byteData) {
-        print('Image byte data: ${byteData!.lengthInBytes}');
-        File file = File('image.png');
-        file.writeAsBytes(byteData.buffer.asUint8List()).then((value) {
-          print('Image saved');
-      });
-    });}));
+    var path = await HomeWidget.renderFlutterWidget(
+      ImageWidget(image: ImmichThumbnail.imageProvider(asset: selectedAsset),),
+      key: 'filename',
+      logicalSize: _globalKey.currentContext!.size!,
+      pixelRatio:
+      MediaQuery.of(_globalKey.currentContext!).devicePixelRatio,
+    ) as String;
+    HomeWidget.saveWidgetData<String>('filename', path);
+    HomeWidget.updateWidget(
+      iOSName: iOSWidgetName,
+      androidName: androidWidgetName,
+    );
+  }
+}
+
+
+class ImageWidget extends StatelessWidget {
+  const ImageWidget({
+    super.key,
+    required this.image,
+  });
+
+  final ImageProvider image;
+
+  @override
+  Widget build(BuildContext context) {
+    return Image(image: image);
   }
 }
