@@ -7,10 +7,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
+import 'package:home_widget/home_widget.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:timezone/data/latest.dart';
 import 'package:immich_mobile/constants/locales.dart';
+import 'package:immich_mobile/constants/app_widget_data.dart';
 import 'package:immich_mobile/modules/backup/background_service/background.service.dart';
 import 'package:immich_mobile/modules/backup/models/backup_album.model.dart';
 import 'package:immich_mobile/modules/backup/models/duplicated_asset.model.dart';
@@ -150,6 +152,9 @@ class ImmichAppState extends ConsumerState<ImmichApp>
 
     // Draw the app from edge to edge
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+    // Set the app group id
+    HomeWidget.setAppGroupId(appGroupId);
 
     // Sets the navigation bar color
     SystemUiOverlayStyle overlayStyle = const SystemUiOverlayStyle(

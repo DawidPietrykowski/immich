@@ -3,6 +3,18 @@
   <application android:label="Immich" android:name=".ImmichApp" android:usesCleartextTraffic="true"
     android:icon="@mipmap/ic_launcher" android:requestLegacyExternalStorage="true">
 
+    <receiver
+      android:name=".FavouritesWidget"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+
+      <meta-data
+        android:name="android.appwidget.provider"
+        android:resource="@xml/favourites_widget_info" />
+    </receiver>
+
     <meta-data
       android:name="io.flutter.embedding.android.EnableImpeller"
       android:value="false" />

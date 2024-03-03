@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/modules/favorite/providers/favorite_provider.dart';
 import 'package:immich_mobile/modules/home/providers/multiselect.provider.dart';
+import 'package:immich_mobile/modules/home_widget/services/favorites_widget_service.dart';
 import 'package:immich_mobile/shared/ui/asset_grid/multiselect_grid.dart';
 
 @RoutePage()
@@ -25,6 +26,9 @@ class FavoritesPage extends HookConsumerWidget {
         ).tr(),
       );
     }
+
+    // TODO: Remove after testing
+    ref.watch(favoritesWidgetServiceProvider).updateWidget();
 
     return Scaffold(
       appBar: ref.watch(multiselectProvider) ? null : buildAppBar(),
