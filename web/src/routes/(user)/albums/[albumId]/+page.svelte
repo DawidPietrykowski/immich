@@ -30,15 +30,14 @@
     NotificationType,
     notificationController,
   } from '$lib/components/shared-components/notification/notification';
-  import UpdatePanel from '$lib/components/shared-components/update-panel.svelte';
   import UserAvatar from '$lib/components/shared-components/user-avatar.svelte';
-  import { AppRoute, dateFormats } from '$lib/constants';
+  import { AppRoute } from '$lib/constants';
   import { numberOfComments, setNumberOfComments, updateNumberOfComments } from '$lib/stores/activity.store';
   import { createAssetInteractionStore } from '$lib/stores/asset-interaction.store';
   import { assetViewingStore } from '$lib/stores/asset-viewing.store';
   import { AssetStore } from '$lib/stores/assets.store';
   import { locale } from '$lib/stores/preferences.store';
-  import { SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
+  import { SlideshowNavigation, SlideshowState, slideshowStore } from '$lib/stores/slideshow.store';
   import { user } from '$lib/stores/user.store';
   import { downloadArchive } from '$lib/utils/asset-utils';
   import { clickOutside } from '$lib/utils/click-outside';
@@ -75,11 +74,12 @@
   import AlbumTitle from '$lib/components/album-page/album-title.svelte';
   import AlbumDescription from '$lib/components/album-page/album-description.svelte';
   import { handlePromiseError } from '$lib/utils';
+  import AlbumSummary from '$lib/components/album-page/album-summary.svelte';
 
   export let data: PageData;
 
   let { isViewing: showAssetViewer, setAssetId } = assetViewingStore;
-  let { slideshowState, slideshowShuffle } = slideshowStore;
+  let { slideshowState, slideshowNavigation } = slideshowStore;
 
   $: album = data.album;
   $: albumId = album.id;
@@ -237,7 +237,8 @@
   };
 
   const handleStartSlideshow = async () => {
-    const asset = $slideshowShuffle ? await assetStore.getRandomAsset() : assetStore.assets[0];
+    const asset =
+      $slideshowNavigation === SlideshowNavigation.Shuffle ? await assetStore.getRandomAsset() : assetStore.assets[0];
     if (asset) {
       await setAssetId(asset.id);
       $slideshowState = SlideshowState.PlaySlideshow;
@@ -280,31 +281,6 @@
     album = await getAlbumInfo({ id: album.id, withoutAssets: true });
   };
 
-  const getDateRange = () => {
-    const { startDate, endDate } = album;
-
-    let start = '';
-    let end = '';
-
-    if (startDate) {
-      start = new Date(startDate).toLocaleDateString($locale, dateFormats.album);
-    }
-
-    if (endDate) {
-      end = new Date(endDate).toLocaleDateString($locale, dateFormats.album);
-    }
-
-    if (startDate && endDate && start !== end) {
-      return `${start} - ${end}`;
-    }
-
-    if (start) {
-      return start;
-    }
-
-    return '';
-  };
-
   const handleAddAssets = async () => {
     const assetIds = [...$timelineSelected].map((asset) => asset.id);
 
@@ -326,12 +302,6 @@
       viewMode = ViewMode.VIEW;
     } catch (error) {
       handleError(error, 'Error adding assets to album');
-    }
-  };
-
-  const handleRemoveAssets = (assetIds: string[]) => {
-    for (const assetId of assetIds) {
-      assetStore.removeAsset(assetId);
     }
   };
 
@@ -395,6 +365,11 @@
     }
   };
 
+  const handleRemoveAssets = async (assetIds: string[]) => {
+    assetStore.removeAssets(assetIds);
+    await refreshAlbum();
+  };
+
   const handleUpdateThumbnail = async (assetId: string) => {
     if (viewMode !== ViewMode.SELECT_THUMBNAIL) {
       return;
@@ -435,10 +410,10 @@
           {/if}
           <DownloadAction menuItem filename="{album.albumName}.zip" />
           {#if isOwned || isAllUserOwned}
-            <RemoveFromAlbum menuItem bind:album onRemove={(assetIds) => handleRemoveAssets(assetIds)} />
+            <RemoveFromAlbum menuItem bind:album onRemove={handleRemoveAssets} />
           {/if}
           {#if isAllUserOwned}
-            <DeleteAssets menuItem onAssetDelete={(assetId) => assetStore.removeAsset(assetId)} />
+            <DeleteAssets menuItem onAssetDelete={handleRemoveAssets} />
             <ChangeDate menuItem />
             <ChangeLocation menuItem />
           {/if}
@@ -475,9 +450,7 @@
                   <CircleIconButton title="Album options" on:click={handleOpenAlbumOptions} icon={mdiDotsVertical}>
                     {#if viewMode === ViewMode.ALBUM_OPTIONS}
                       <ContextMenu {...contextMenuPosition}>
-                        {#if album.assetCount !== 0}
-                          <MenuOption on:click={handleStartSlideshow} text="Slideshow" />
-                        {/if}
+                        <MenuOption on:click={handleStartSlideshow} text="Slideshow" />
                         <MenuOption on:click={() => (viewMode = ViewMode.SELECT_THUMBNAIL)} text="Set album cover" />
                         <MenuOption on:click={() => (viewMode = ViewMode.OPTIONS)} text="Options" />
                       </ContextMenu>
@@ -491,7 +464,7 @@
               <Button
                 size="sm"
                 rounded="lg"
-                disabled={album.assetCount == 0}
+                disabled={album.assetCount === 0}
                 on:click={() => (viewMode = ViewMode.SELECT_USERS)}
               >
                 Share
@@ -563,13 +536,8 @@
               <section class="pt-24">
                 <AlbumTitle id={album.id} albumName={album.albumName} {isOwned} />
 
-                <!-- ALBUM SUMMARY -->
                 {#if album.assetCount > 0}
-                  <span class="my-2 flex gap-2 text-sm font-medium text-gray-500" data-testid="album-details">
-                    <p class="">{getDateRange()}</p>
-                    <p>·</p>
-                    <p>{album.assetCount} items</p>
-                  </span>
+                  <AlbumSummary {album} />
                 {/if}
 
                 <!-- ALBUM SHARING -->
@@ -698,8 +666,8 @@
   <ConfirmDialogue
     title="Delete album"
     confirmText="Delete"
-    on:confirm={handleRemoveAlbum}
-    on:cancel={() => (viewMode = ViewMode.VIEW)}
+    onConfirm={handleRemoveAlbum}
+    onClose={() => (viewMode = ViewMode.VIEW)}
   >
     <svelte:fragment slot="prompt">
       <p>Are you sure you want to delete the album <b>{album.albumName}</b>?</p>
@@ -717,8 +685,6 @@
     on:showSelectSharedUser={() => (viewMode = ViewMode.SELECT_USERS)}
   />
 {/if}
-
-<UpdatePanel {assetStore} />
 
 <style>
   ::placeholder {

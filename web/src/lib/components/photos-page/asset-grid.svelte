@@ -14,7 +14,6 @@
   import type { AlbumResponseDto, AssetResponseDto } from '@immich/sdk';
   import { DateTime } from 'luxon';
   import { createEventDispatcher, onDestroy, onMount } from 'svelte';
-  import AssetViewer from '../asset-viewer/asset-viewer.svelte';
   import IntersectionObserver from '../asset-viewer/intersection-observer.svelte';
   import Portal from '../shared-components/portal/portal.svelte';
   import Scrollbar from '../shared-components/scrollbar/scrollbar.svelte';
@@ -72,7 +71,7 @@
 
   const trashOrDelete = async (force: boolean = false) => {
     isShowDeleteConfirmation = false;
-    await deleteAssets(!(isTrashEnabled && !force), (assetId) => assetStore.removeAsset(assetId), idsSelectedAssets);
+    await deleteAssets(!(isTrashEnabled && !force), (assetIds) => assetStore.removeAssets(assetIds), idsSelectedAssets);
     assetInteractionStore.clearMultiselect();
   };
 
@@ -169,7 +168,7 @@
         (await handleNext()) || (await handlePrevious()) || handleClose();
 
         // delete after find the next one
-        assetStore.removeAsset(asset.id);
+        assetStore.removeAssets([asset.id]);
         break;
       }
 
@@ -414,7 +413,7 @@
       <slot name="empty" />
     {/if}
     <section id="virtual-timeline" style:height={$assetStore.timelineHeight + 'px'}>
-      {#each $assetStore.buckets as bucket, bucketIndex (bucketIndex)}
+      {#each $assetStore.buckets as bucket (bucket.bucketDate)}
         <IntersectionObserver
           on:intersected={intersectedHandler}
           on:hidden={() => assetStore.cancelBucket(bucket)}
@@ -451,17 +450,19 @@
 
 <Portal target="body">
   {#if $showAssetViewer}
-    <AssetViewer
-      {withStacked}
-      {assetStore}
-      asset={$viewingAsset}
-      {isShared}
-      {album}
-      on:previous={handlePrevious}
-      on:next={handleNext}
-      on:close={handleClose}
-      on:action={({ detail: action }) => handleAction(action.type, action.asset)}
-    />
+    {#await import('../asset-viewer/asset-viewer.svelte') then AssetViewer}
+      <AssetViewer.default
+        {withStacked}
+        {assetStore}
+        asset={$viewingAsset}
+        {isShared}
+        {album}
+        on:previous={handlePrevious}
+        on:next={handleNext}
+        on:close={handleClose}
+        on:action={({ detail: action }) => handleAction(action.type, action.asset)}
+      />
+    {/await}
   {/if}
 </Portal>
 

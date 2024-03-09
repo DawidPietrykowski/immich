@@ -80,6 +80,7 @@ export enum SystemConfigKey {
   OAUTH_BUTTON_TEXT = 'oauth.buttonText',
   OAUTH_CLIENT_ID = 'oauth.clientId',
   OAUTH_CLIENT_SECRET = 'oauth.clientSecret',
+  OAUTH_DEFAULT_STORAGE_QUOTA = 'oauth.defaultStorageQuota',
   OAUTH_ENABLED = 'oauth.enabled',
   OAUTH_ISSUER_URL = 'oauth.issuerUrl',
   OAUTH_MOBILE_OVERRIDE_ENABLED = 'oauth.mobileOverrideEnabled',
@@ -87,6 +88,7 @@ export enum SystemConfigKey {
   OAUTH_SCOPE = 'oauth.scope',
   OAUTH_SIGNING_ALGORITHM = 'oauth.signingAlgorithm',
   OAUTH_STORAGE_LABEL_CLAIM = 'oauth.storageLabelClaim',
+  OAUTH_STORAGE_QUOTA_CLAIM = 'oauth.storageQuotaClaim',
 
   PASSWORD_LOGIN_ENABLED = 'passwordLogin.enabled',
 
@@ -106,6 +108,8 @@ export enum SystemConfigKey {
   TRASH_DAYS = 'trash.days',
 
   THEME_CUSTOM_CSS = 'theme.customCss',
+
+  USER_DELETE_DELAY = 'user.deleteDelay',
 }
 
 export enum TranscodePolicy {
@@ -227,6 +231,7 @@ export interface SystemConfig {
     buttonText: string;
     clientId: string;
     clientSecret: string;
+    defaultStorageQuota: number;
     enabled: boolean;
     issuerUrl: string;
     mobileOverrideEnabled: boolean;
@@ -234,6 +239,7 @@ export interface SystemConfig {
     scope: string;
     signingAlgorithm: string;
     storageLabelClaim: string;
+    storageQuotaClaim: string;
   };
   passwordLogin: {
     enabled: boolean;
@@ -271,5 +277,8 @@ export interface SystemConfig {
   server: {
     externalDomain: string;
     loginPageMessage: string;
+  };
+  user: {
+    deleteDelay: number;
   };
 }
