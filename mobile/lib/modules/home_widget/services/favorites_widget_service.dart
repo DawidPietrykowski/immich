@@ -45,6 +45,10 @@ class FavoritesWidgetService{
   FavoritesWidgetService(this.favoriteAssets);
 
   void updateWidget() async {
+    if (favoriteAssets.length == 0){
+      print('No favorite assets');
+      return;
+    }
     Asset selectedAsset = favoriteAssets[0];
     print('Selected asset: ${selectedAsset.name}');
     var path = await HomeWidget.renderFlutterWidget(

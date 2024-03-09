@@ -33,6 +33,10 @@ class FavouritesWidget : AppWidgetProvider() {
             // New: Add the section below
             // Get chart image and put it in the widget, if it exists
             val imageName = widgetData.getString("filename", null)
+            if (imageName == null) {
+              println("filename is null")
+              return;
+            }
             val imageFile = File(imageName)
             val imageExists = imageFile.exists()
             if (imageExists) {
